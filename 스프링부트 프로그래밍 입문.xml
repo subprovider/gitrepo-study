@@ -1,0 +1,599 @@
+﻿<Spring Framework 의해>
+* 스프링의 개요와 의존성 주입(DI)
+ 1. 스프링 프레임워크
+    스프링은 자바 플랫폼을 위한 '오픈소스 애플리케이션 프레임워크 이다.
+	여기서 프레임워크란 소프트웨어를 편리하게 제작할 수 있도록 뼈대를 이루는 클래스와 인터페이스를 미리 제작하여 모아둔 것을 의미
+ 2. 의존성 주입 (Dependency Injection)	
+    전통적인 소프트웨어 공학에 말하는 이상적인 프로그램은 '객체들간의 결합도와 의존성은 낮게, 응집도는 높게 구성되야 합니다.'
+	스프링은 객체들간에 의존성을 낮추는 방법으로 '의존성 주입' 을 사용한다. 의존성 주입은 개발 코드내에서 객체를 생성하는 것이 아닌, 객체의 생성과 테이터 주입을 담당하는 별도의 Factory Class 를 운용한다.
+	
+ex) +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 	public class Student{
+		private String name;
+		private int age;
+		private int gradeNum;
+		private int classNum;
+		
+		public Student() {}
+		public Student(String name, int age, int gradeNum, int classNum){
+			this.name = name;
+			this.age = age;
+			this.gradeNum = gradeNum;
+			this.classNum = classNum;
+		}
+	
+		<이하> getter/setter
+	}
+	
+	전통적인 java 에서는 외부에서 객체를 생성해서 setter/getter 로 값을 빼왔다.
+	Student student = new Student();
+	student.getName(); student.setName(name);
+	
+	스프링은 대신 별도의 xml 파일(factory) 에서 객체를 만들어 사용한다. 이것을 bean 이라고 한다.
+	
+ 3. Bean 과 Propery 의 사용(setter 사용)
+	스프링에서 한 클래스의 객체를 만들 때 개발 코드 내에서 'new' 를 사용하는 것 대진, 별도의 클래사에서 'bean' 을 만들어 사용 한다.
+	
+ex) +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    src/main/resoureces 폴더 밑에 factory class 파일을 모아둔다.
+	- applicationCTX.xml 파일을 만들고
+	-. 스프링에서 객체 생성의 시작점은 <bean> tag 생성 후 <id> 에는 객체명 <class> 어떤    클래스의 객체인지 <패키지경로.클래스명> 으로 작성
+		<bean id="student1" class="springDI3_xml_constructor_@719.Student">
+		</bean>
+		즉 Student student1 = new Student(); 와 같은 역할이다.
+	- setter 역할을 하는 것이 <property> 이다.
+		<bean id="student1" class="springDI3_xml_constructor_@719.Student">
+			<property name="age" value="15"></property>
+			<property name="name" value="james"></property>
+			<property name="gradeNum" value="1"></property>
+			<property name="classNum" value="5"></property>			
+		</bean>	
+ 4. Main class 에서 객체 호출하기
+ 
+	public class MainClass{
+		
+		public static voide maein(String[] args){
+			String configlocation = "classpath:applicationCTX.xml";	 ← factory 경로 선언
+			
+			AbstractApplicationContext ctx = new GenericXmlApplicationContext(configlocation); ← 스프링 컨테이너 만들기
+			
+			Student student1 = ctx.getBean("student1", Student.class);		← Student 객체생성
+			
+		}
+	}
+ 5. constructor 초기화
+	factory 파일에서 property 가 아닌 생성자로 초기화 한다.
+		<bean id="student1" class="springDI3_xml_constructor_@719.Student">
+			<constructor-arg name="age" value="15" />
+			<constructor-arg name="name" value="james" />
+			<constructor-arg name="gradeNum" value="1" />
+			<constructor-arg name="classNum" value="5" />
+			<constructor-arg>
+				<list>
+					<value>등산</value>
+					<value>바둑</value>					
+				</list>				
+			</constructor-arg>			
+		</bean>	
+	
+ 6. factory 파일에서 c / p 네임스페이스를 임포트 하면
+    c 는 생성자 초기화, p 는 propery 를 의미
+		<bean id="student1" class="springDI3_xml_constructor_@719.Student" p:arg ="15" p:name ="james" />
+		<bean id="student1" class="springDI3_xml_constructor_@719.Student" c:arg ="15" c:name ="james" />	
+	
+◆ Spring Digis
+1. Field Injection
+  @Service
+  class PersionService{
+	@Autowired
+	private PersonRepository personRepository;
+  }
+  가장 코딩량이 적고, 그 때문에 많이 이용한다. 이 방식은 편리하지만, 스프링에 종속됨.
+  테스트 시 생성자 없고, 수정자(setter) 도 없기 때문에  Mock 객체를 이용한 테스트가 힘들다.
+  
+2. Contructor Injection
+   생성자를 이용한 주입이다. 객체 생성 시 주입 객체를 받기 때문에 생성한 이후에는 주입된 객체를 수정할 수 없다.
+  @Service
+  class PersionService{
+	
+	private PersonRepository personRepository;
+	
+	@Autowired
+	public PersionService(PersonRepository personRepository) {
+		this.personRepository = personRepository;
+	}
+  }   
+   생성자가 명시적으로 존재하기 때문에, test 시 필요한 Mock 객체를 주입하기도 편하다.
+   
+3. Setter Injection
+   setter 를 이용한 주입이다. 위 두 가지 방식 중 가장 유연하다. 객체가 생성된 이후 에도 주입된 객체를 바꿔 줄 수 있다. 하지만 내부 객체가 프로덕션 코드에서도 변경될 수 있기 때문에 위험하기도 하다.
+
+   
+</Spring Framework 의해>	
+<스프링부트 프로그램밍 입문>
+
+/********************************************************************************************************/
+
+* github 소스 가져오기 : git clone https://github.com/gilbutITbook/006905
+
+* romboc annotation 사용
+package org.my.practice;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
+
+@Entity
+@Table(name="mydata")
+@Getter @Setter
+@AllArgsConstructor
+public class MyData {
+
+	/**
+	 * @Id 는 메인키를 지정, @GeneratedValue(strategy = GenerationType.AUTO) 는 키 값 자동 생성
+	 */
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column
+	private long id;
+	
+	@Column(length= 50, nullable = false)
+	private String name;
+	
+	@Column(length=200, nullable = false)
+	private String mail;
+	
+	@Column(nullable = true)
+	private Integer age;
+	
+	@Column(nullable = true)
+	private String meno;
+	
+}
+
+
+/**
+ * for each 용업
+ * */
+
+Map<String, Integer> items = new HashMap<>();
+items.put("A", 10);
+items.put("B", 20);
+items.put("C", 30);
+items.put("D", 40);
+items.put("E", 50);
+items.put("F", 60);
+
+// nomal way
+for (Map.Entry<String, Integer> entry : items.entrySet()) {
+	System.out.println("Item : " + entry.getKey() + " Count : " + entry.getValue());
+}
+
+// java 8 way
+items.forEach((k,v)->System.out.println("8 Item : " + k + " Count : " + v));
+
+// java 8 way		
+items.forEach((k,v)->{
+	System.out.println("nomal Item : " + k + " Count : " + v);
+	if("E".equals(k)){
+		System.out.println("Hello E");
+	}
+});		
+
+/********************************************************************************************************/
+
+2. 그루비를 이용한 초간단한 애플리케이션 개발
+ - templates 폴더에 tpl(groovy template 이 이 폳더에 있으면 읽힌다. xxx.html 만 존재해야함.
+ - 그루비에서 한글 깨짐 현상 : native2ascii -encoding -utf-8 app.groovy xxx.groovy 
+ - thymleaf 사용 tag : th <- html tag 내 사용
+ 
+ 
+ 3.typmeleaf 템플릿
+  - 기본은 변수식과 OGNL(Object-Graph Navigation Language) 
+     → 변수식 ${{}} 을 의미 이 변수식 안에 작성하는 것을 OGNL 이라고 한다.
+	 ex) <p th:text="${new java.util.Date().toString()}"></p>
+	     이런 식으로 인스턴스를 new 하거나 메서드를 호출하는 OGNL 식을 사용
+		 
+  - 유틸리티 객체
+    typmleaf 에선 자주 사용하는 클래스를 #이름 이라는 상수로 정의해서 변수식 안에 직접 작성.
+    #string, #number ,#bools, #dates, #objects 	, #arrays , #lists , #sets , #mpas 
+	ex) new #dates 는 안되고 #dates.XXX 과 같이 클래스 필드나 메서드를 호출해서 사용하는
+	<p th:text="${#dates.format(new java.util.Date(), ''dd/MMM/yyy HH:mm)}"></p>
+	<p th:text="${#number.formatInteger(1234,7)}"></p>
+	<p th:text="${#string.toUpperCase('welcome to spring')}"></p>	 
+	
+  - 매개변수에 접근
+    param 이라는 변수는 변수 식 안에서 직접 사용할 수 있는 변수다. ↓ 텍스트 리터털로 표현
+	<p th:text="'from parameter ... id=' + ${param.id[0]} + ', name=' + ${param.name[0]}"></p>
+	http://localhost:8080/?id=ok&name=but
+	
+  - 메시지식
+    ${} 라는 변수식 외에도 thymeleaf 에서 사요할 수 있는 것이 메시지식 이다. 
+	#{값 지정} 프로퍼티 파일에 작성.
+	<h1 th:text="#{content.title}">Hello page</h1>
+	<p th:text="#{content.message}"></p>	
+	
+  -	링크식과 href
+    @{주소} 기본적으로 URL 을 지정하는 속성(<a> 태그의 href 등) 에서 사용한다. 
+	@{/index} 면 index 로 가는 링크를 지정
+	<p><a th:href="@{'/home/' + ${param.idp[0]}}">link</a></p>
+
+  -	선택 객체의 변수식
+    ${object} 는 controller 의 ModelAndView 에 담긴 DataObject 의 object 이다.
+	<table th:object=${object}>
+		<tr><th>ID<td th:text="*{id}"></td></th></tr>
+		<tr><th>NAME<td th:text="*{name}"></td></th></tr>
+		<tr><th>EMAIL<td th:text="*{value}"></td></th></tr>				
+	</table>
+
+  -	리터럴 치환
+    기존 " 'A' + 'B'" 와 같이텍스트 리터럴 치환을 "| 텍스트 내용|" 으로 대체 할 수 있다.
+	<div th:object=${object}>
+		<p th:text="|my name is *{name}. mail address is *{value}.|">message.</p>>
+	</div>		
+
+  -	HTML 코드 출력
+    th:utext 를 사용하면 controller 에서 변수 값에 html tag 를 붙여서 사용할 수 있다.
+	<p th:utext="${htmlcodeUtext}"></p>	
+	
+  -	조건식
+    (${} ? ${} : ${})
+	<p th:text="${myNum} + ' is ' + (${check} ? ${trueVal} : ${falseVal})"></p>
+	
+  -	조건 분기의 th:if
+    th:if="조건" , th:unless="조건" 
+	true 로 인식되는 것 : true, 0 이 외의 숫자, "0" or "off" or "no" 이 외의 텍스트
+	false 로 인식되는 것 : false, 0 , "0" or "off" or "no" 
+	<p th:if="${check}" th:text="'if result ' + ${myNum} + ' is ' + ${trueVal}">message</p>
+	<p th:unless="${check}" th:text="'unless result ' + ${myNum} + ' is ' + ${falseVal}">message</p>		
+	
+  -	조건 분기의 th:switch
+    th:if="조건" , th:unless="조건" 
+	< th:switch>
+		< th:case/>
+		< th:case/>
+	</>
+	<div th:switch="${checkMonth}">
+		<p th:case="0" th:text="|${checkMonth} - Winter|"></p>
+		<p th:case="1" th:text="|${checkMonth} - Spring|"></p>
+		<p th:case="2" th:text="|${checkMonth} - Summer|"></p>
+		<p th:case="3" th:text="|${checkMonth} - Autumn|"></p>
+		<p th:case="4" th:text="|${checkMonth} - Winter|"></p>								
+		<p th:case="*">....?</p>		
+	</div>	
+	
+  -	반복문의 th:each
+    th:if="조건" , th:unless="조건" 
+	< th:each="변수 : ${컬렉션}">
+		...${변수} 를 사용한 표시......
+	</>
+	<tr th:each="obj:${data}">
+		<td th:text="${obj[0]}"></td>
+		<td th:text="${obj[1]}"></td>
+		<td th:text="${obj[2]}"></td>						
+	</tr>		
+
+  -	전처리에 대해
+    __${텍스트}__ ← 텍스트가 식으로 인식되어 먼저 처리 된다.. 
+	<p th:text="|expression[ ${check} ]|"></p>
+	<table th:object="${data.get(__${check}__)}">
+		<tr><th>ID<td th:text="*{id}"></th></tr>
+		<tr><th>NAME<td th:text="*{name}"></th></tr>
+		<tr><th>VALUE<td th:text="*{value}"></th></tr>
+	</table>					
+	
+  -	인라인 처리에 대해
+    th:text 를 매번 사용하지 않고, th:inline="text" 선언으로 하위 변수 선언에 th:text 를 선언하지 않아도 된다.
+	대신 변수 식에 [[${num}]] 과 같이 사용해야 한다.
+	<table th:inline="text">
+		<tr>
+			<th>NAME</th>
+			<th>EMAIL</th>
+			<th>TEL</th>						
+		</tr>
+		<tr th:each="obj:${data}">
+			<td>[[${obj.id}]]</td>
+			<td>[[${obj.name}]]</td>
+			<td>[[${obj.value}]]</td>						
+		</tr>		
+	</table>	
+	
+  -	자바 스크립트 인라인 처리에 대해
+    자바 스크립트에도 인라인을 적용할 수 있다. <script th:inline="javascript"> 변수 식도 /*[[${변수}]]*/ 주석형태로 작성한다.
+	<script th:inline="javascript">
+	function action(){
+		var val = document.getElementById("text1").value;
+		var res = parseInt(val * ((100 +/*[[${tax}]]*/) / 100 ));
+		document.getElementById("msg").innerHTML = "include tax : " + res;
+	}
+	</script>
+
+  -	템플릿 프래그먼트
+    헤더, 바디, 푸터 를 별도의 메뉴로 작성하고 이 파일들을 조합해서 페이지를 구성할 때 사용하는 것이 템플릿 프래그먼트 이다.
+	부품이 되는 템플릿 → < th:fragment="프래그먼트명">
+	조합하는 측 → < th:include="템플릿명:프래그먼트명">
+	
+	
+ 4. JSP
+  -	JSP 는 필요한가?
+    스프링 부트에서는 JSP 사용을 권장하지 않는다. JAR 형식으로 동작하지 않고, WAR 파일로 배포해야하는 등, 몇 가지 제약이 있기 때문이다.
+	가장 큰 이유는 JSP 자체가 서버측 언어로 사용 빈도가 줄어 들고 있기 때문이다.
+	뷰 부분에 코드가 섞여 있어 html 편집기 등에서 JSP 삽입 부분을 분리하기 어려운 단점이 존재한다.
+	1. pom.xml 추가
+	<dependency>
+		<groupId>org.apache.tomcat</groupId>
+		<artifactId>tomcat-jsp-api</artifactId>
+		<version>9.0.12</version>
+	</dependency>
+	2. application.properties 에 추가 → html 템플릿을 jsp 로 인식한다.
+	spring.mvc.view.prefix= /WEB-INF/jsp/  → 템플릿에 대한 경로 지정
+	spring.mvc.view.suffix= .jsp → 확장자
+	
+ 5. JPA에 의한 데이터 베이스 사용하기
+  -	스프링 프레임워크의 지속성 접근법
+    JAVA EE 에는 JPA(Java Persistence API) 라는 지속성을 위한 API 도 존재. 즉 JPA 란 기술이 토대가 되어 스프링MVC 모델 관련 부분이
+	구축되어 있다. MVC 의 Model 은 스프링 부트의 기능이 아니다 라는 점에 유의.
+  
+  -	JPA (Java Persistence API) 는 데이터 베이스 관련 기능을 구현할 때 사용한다. 이것은 JAVA EE 의 데이터 지속성 에 관한 기능이다.
+    지속성이란 '객체 등의 데이터를 저장해서 항상 사용할 수 있게 하는 것 이다. 구체적으로는 객체의 내용을 데이터 베이스에 저장하고
+	필요에 따라 꺼내서 객체를 재구축하는 기술이다.
+	Controller → Model | JPA → DataBase 형태이다.
+	
+  - JPA 를 사용하기 위해 다음과 같은 라이브러리 및 프레임워크를 준비
+    1. HSQLDB(Hyper SQL DataBase) : 자바로 만들어진 오픈 소스 데이터 베이스 이다. 자바로 만들어졌기 때문에 '애플리케이션 자체에 데이터 베이스까지 내장' 할 수 있다.
+       같은 방식의 라이브러리로 Java DB(Apache derby) 등이 있지만, HSQLDB 는 용량이 매우 적고 사용이 쉽다라는 장점이 있다. 또한 파일로 저장하는 것은 물론 
+       메모리에 데이터베이스를 저장할 수 있어서 개발 단계의 테스트 용으로도 적합하다.
+	2. JTA(Java Transaction API) : JAVA EE 에 트랜젝션 처리를 제공한다. JTA 와 JPA 를 조합해서 지속성 처리를 구현한다.
+	3. Spring ORM(Object-Relational Mapping) : 스프링프레임워크에 존재하는 ORM 프레임워크이다. ORM 이란 객체와 데이터베이스 테이블을 매핑해서 
+	   임피던스 블일치(impedance mismatch) 라는 문제를 해결해 준다.
+	   임피던스 불일치란 데이터베이스와 객체의 설계 구조상 차이로 발생하는 문제를 가리킨다. 서로 다른 목적으로 개발되었기 때문에 구조가 다르며 이런 구조적인 차이를
+	   해결해서 상호일치시키는 것이 ORM 이다.
+	4. Spring Aspects/Spring AOP : 스프링 프레임워크 내부 프레임워크다. 이 안에 있는 기능들을 직접 호출해서 사용하는 것이 아니라 데이터베이스를 자유롭게
+	   사용할 수 있게 백그라운드에 동작하는 구조라고 생각하면 된다.
+	   
+    ※ 위 모든 것들은 Spring Boot Starter Data JPA 라이브러리를 사용해서 통합적으로 사용한다. 위 기술된 요소들은 JPA 내부적으로 동작된다.   	
+	
+  - 엔터티에 대해
+     모델이 되는 자바 클래스를 작성. JPA 를 이용하는 경우 데이터베이스의 데이터에 해당되는 부분을 엔터티(Entity) 라고 한다. 이를 클래스로 정의
+	 데이터베이스에서는 테이블을 정의하고 거기에 레코드 형태로 데이터를 저장하는 것이 일반적이지만 엔터티는 하나하나의 레코드를 자바 객체로 저장한 것 이다.
+	 @Entity
+	 public class 클래스명{
+		private 필드 정의;
+	 }
+	 일반적인 POJO 형태 이다.
+	 ex) MyData.class 파일 참조
+	 
+  - 리포지터리에 대해
+     엔터티는 테이블에 저장된 데이터를 자바 내에서 객체로 사용할 수 있게 하는 클래스지만 이걸로 데이터베이스 연결이 되는 것이 아니다.
+	 스프링 부터의 리포지터리(repository) 방법을 통해 데이터베이스 접속에 필요한 설정을 할 수 있다.
+	 리포지터리는 데이터베이스 접속을 위한 기본적인 수단을 제공한다. 보통은 이것을 인터페이스로 설정한다.
+	 그렇다면 인터페이스를 구현한 클래스를 정의하고 그 안에 데이터베이스 접속 처리를 작성 한다고 생각할 수 있지만 틀리다.
+	 클래스를 구현(implement) 하지 않고 별도의 처리도 작성하지 않는다.
+	 리포지터리는 범용적인 데이터베이스 접속처리를 자동으로 생성한다.
+	 
+     @Autowired - 애플리케이션에 있는 Bean 객체와 연동하기 위한 것이다. 이 것을 사용해서 MyDataRepository 의 인스턴스가 자동으로 repository 필드로 설정된다.
+	 Bean 객체 - Spring MVC 에 의해 자동으로 인스턴스가 생성되서 애플리케이션 내에서 사용할 수 있게 된것
+	 
+	 ※ @Autowired는 싱글톤 객체처럼 한 번 생성된 객체를 계속해서 사용하는 것이었다.
+	    new로 객체를 선언해서 항상 객체를 새로 만드는 것이 아니라 bean에 등록되어 재사용하는 것이었다.
+		그래서 매번 호출을 해도 bean에 등록된 service클래스 객체가 있어서 생성자를 실행하지 않는 것이었다.
+		새로운 객체가 생성되지 않으니 생성자가 실행이 안될 수 밖에 없었다.	 
+	 
+	 
+	 ※ Bean 이 등록되기 까지의 흐름
+	  1. 애플리케이션 실행 시 에 @Repository 가 붙은 인터페이스를 검색해서 자동으로 클래스를 만들고, 해단 인스턴스를 애플리케이션에 Bean으로 등록한다.
+	  2. 컨트롤러 등의 클래스가 로드 될 때 @Autowired 가 설정된 필드가 있으면 등 완료된 Bean에서 동일 클래스를 검색해서 자동으로 해당 필드에 할당한다.
+	  
+	  '왜 스프링 프레임워크는 특정 클래스를 자동으로 Bean 으로 등록하는 가 그리고 어떻게 등록할 클래스를 식별하는 가' 라는 의문을 가진 사람들도 많을 것이다.
+	  사실은 스프링 프레임워크가 제공하는 각 종 annotation 에 의해 '이 클래스의 인스턴스를 Bean 으로 등록한다' 는 것을 인식하고 있다.
+	  따라서 우리가 할 작업은 '@repository 를 지정한 인터페이스를 준비하기' , '@Autowired 를 저정한 리포지터리 인터페이스의 필드 준비하기' 가 전부다.
+	  스프링 부트의 기반이 되고 있는 스프링 프레임워크의 모든 기능은 '필요한 기능을 Bean 으로 설정하고 그것을 자동으로 필드 등에 연동한다' 는 방식으로
+	  만들어저 있다. '얼마나 많은 Bean 을 잘 사용하는 가' 가 스프링 부트를 이해하는 데 매우 중요한 포인트가 된다.
+	 
+  - javax.validation 의 애너테이션
+     @Null/@NotNull : 값이 null 이다 아니다.  ex) @Null/@NotNull
+	 @Min/Max : 숫자(정수)의 최소값, 최대값  ex) @Min(20) , @Max(50)
+	 @DecimalMin/DecimalMax : string 이나 decimalinteger 에 대한 min, max ex) @DecimalMin("123") @DecimalMax("1233345")
+	 @Digis : 정수부분과 소수부분의 자릿수 제한은 검증 integer 로 정수, fraction 으로 소수 이하 자릿수 지정 ex) @Digits(integer=5. fraction=10)
+	 @Future/@Past : @Funture 는 현재 보다 뒤 미래 일시, @Past 는 현재 앞 과거의 일수 ex) @Future @Past
+	 @Size : 배열 및 컬렉션 등 항상 값을 모아서 저장하는 객체에 사용 min 은 최소 요소 수, max 는 최대 요소 수 ex) @Size(min=1, max=10)
+	 @Pattern : 정규 표현식의 패턴을 지정 ex) @Pattern(regexp="[a-zA-Z]")
+	 
+  - Hibernate validator 를 이용한 애너테이션
+    javax.validation 패키지와 어깨를 나란히 할 수 있는 것이 org.hibernate.validator 패키지를 사용하는 Hibernate Valitaor 라이브러리 이다.
+	@NotEmpty : string 항목에서 값이 null 또는 공백인지 확인 한다.  ex) @NotEmpty
+	@Length : string 문자열 길이의 범위를 지정한다.  ex) @Length(min=5, max=10)
+	@Range : 숫자 항목을 확인 한다. ex) @Range(min=10, max=100)
+	@Email : 입력된 값이 이메일 주소인지 확인 한다. ex) @email
+	@CreditCardNumber : 입력된 값이 신용카드 번호 형식과 일치하는 지 확인  ex) @CreditCardNumber
+	@EAN : 바코드 식별 구격
+	
+	
+  - 유효성 검증 기능 만들기
+    각각의 애너테이션이 가지고 있는 유효성 검증 처리는 유효성 검사기(validator) 라고 하는 데이터 확인용 클래스를 사용하고 있다.
+	여기서 소개한 다양한 검증 기능을 통해서 데이터를 확이할수 있지만 필요한 경우는 자신이 검사기를 만들어서 추가할 수 있다.
+	유혀성 검사사기를 만들기 위해서는 두 개의 클래스가 필요하다. 허나의 애너테이션 크래스이고 다른 하나는 밸리데이터(validator) 클래스 이다.
+	* 애너테이션 클래스
+	public @interface 애너테이션명{ .. 처리 내용 }
+	
+	* 밸리데이터 클래스
+	public class 클래스명 implement ConstraintValidator{ .... 구체적인 내용 } 
+	
+	 
+	 
+ 6. 데이터베이스 처리 마스터 하기
+  -	EntityManager 를 이용한 데이터베이스 처리
+    * 스프링 프레임워크와 JPA
+      JPA 와 repository 를 활용한 기본적인 데이터베이스 처리는 CRUD 가 가능하고 findById 를 이요한 단순 검색은 가능하다.
+	  이와 같은 repository 를 사용한 데이터 베이스 처리는 한계가 있다. 
+	  java EE 에선 JDBC 를 사용하지 않고 JPA 를 사용하여 처리 한다. 이 JPA 를 스프링 프레임워크에서 사용할 수 있게 한 것이 Spring Data JPA 프레임워크 이다.
+	  스프링 부트의 Repository 도 Spring Data JPA 를 사용하여 만들어 진 것 이다.
+	* Data Access Object
+	  데이터베이스 접속에는 일반적으로 DAO 라는 객체를 사용한다. 문자 그대로 데이터베이스에 접속하기 위한 수단을 제공하는 객체이다.
+	  
+	  1. DAO 인터페이스 준비
+	  2. DAO 클래스 인터페이스 구현
+	  
+	  @PersistenceContext - EntityManager 의 Bean 을 가져와서 필드에 설정한다. 스프링 부트의 경우 EntityManager 는 실행 시에 자동으로 Bean 에 등록된다.
+	                        이것을  @PersistenceContext 를 사용해서 필드에 할당하고 있는 것 이다. EntityManager 를 사용할 때 이 애너테이션을 기본이다.
+							
+	  @PersistenceContext 는 여러개 설정할 수 없다. Bean 을 바인딩 할 수 있는 것은 한 개 뿐이다. 
+	  DAO 클래스에 @PersistenceContext 를 설정할 수 있지만 다른 DAO 클래스에 @PersistenceContext 를 붙이면 오류가 발생한다. 
+	  따라서 컨트롤러 측에 @PersistenceContext 를 준비해서 DAO 의 인스턴스를 수작업으로 만들고 EntityManager 를 전달하는 변칙적인 방법을 사용 한다.
+      아니면 DAO 클래스를 하나로 모아서 사용한다면 DAO 에 @PersistenceContext 로 EntityManager 를 설정하는 것이 편리하다.
+      자동으로 할당하는 Bean 은 어디에 사용하면 좋을 지 잘 생각한 후에 사용하는 것이 중요하다.	  
+	
+  -	JPQL 활용하기
+    JPQL 은 SQL 의 쿼리와 닮은 쿼리문을 실행해서 데이터베이스를 처리하기 위한 간이 언어이다.
+    JAVA 프로그램 → JPQL 쿼리 → JPA → SQL 쿼리 → SQL 데이터베이스  -> 이 형태로 처리된다.	
+	
+	* HttpServletRequest 라는 것은 JSP 서블릿에서 사용되는 HttpServletRequest 와 같은 것 이다. 서븦릿에서 doGet 이나, doPost 를 할 때 반드시 필요한 기능이다.
+	  앞에선 post 로 받는 메서드에서는 @RequestParam 을 이용했었다. 하지만 HttpServletRequest 를 사용 할 수 없는 것 은 아니다. 즉 @RequestParam 의 파라미터라는 것은
+	  HttpServletRequest 의 getParameter 를 호출해서 자동으로 파라미터를 받고 그 결과를 인수로 설정하는 것이다.	
+	
+    * 쿼리 애너테이션
+	  DAO implement class 에 쿼리문을 문자열로 작성하는 것이 애매하기 때문에 쿼리문 자체를 코드에서 분리해서 관리하는 것이 유지관리 측면에서 편리하다.
+	  이것을 구현해 주는 것이 '쿼리 애너테이션' 이다.
+	  ex) class 위에 애너테이션 으로 아래처림 구현하면 된다.
+		@Entity
+		@Table(name="mydata")
+		@NamedQueries(
+		  {
+			@NamedQuery(
+			  name = "findWithName",
+			  query = "from MyData where name like :fname"
+			),
+			@NamedQuery(
+			  name = "findWithId",
+			  query = "from MyData where id = :fid "
+			)
+		  }
+		)
+		public class MyData {	  
+	  
+    * 리포지터리와 @Query
+	  스프링 부트에선 데이터베이스 처리에 리포지터리를 사용하는 것이 일반적이지만 이 리포지터리가 되는 인터페이스에 쿼리 애너테이션을 설정할 수 있다.
+	  바로 @Query 라는 것 이다. 이것은 리포지터리 인터페이스의 메서드 선언부 앞에 기술한다.
+      ex) 
+      @Repository
+      public interface MyDataRepository extends JpaRepository<MyData, Long>{
+	      @Query("SELECT d FROM MyData d ORDER BY d.name")
+	      public List<MyData> findAllOrderByName();
+	
+	      @Query("from MyData where age > :min and age < :max")
+	      public List<MyData> findByAge(@Param("min") int min, @Param("max") int max);		  
+	  
+  -	Crieria API 를 사용한 검색
+    JPA 에는 Criteria API 라는 기능이 있어서 자바다운 데이터베이스 처리를 가능하게 한다. 이 criteria API 에선 세 개의 클래스를 조합해서 사용한다.
+	CriteriaBuilder 클래스 : Criteria API 를 사용해서 쿼리 생성을 관리하는 클래스
+	CriteriaQuery 클래스 : Criteria API 를 사용해서 쿼리를 실행하는 클래스
+	Root 클래스 : 검색할 엔터티의 규칙을 지정하는 클래스. 필요한 엔터티를 필터하는 경우 등에 사용한다.
+	
+	CriteriaBuilder criteriaBuilder = entityManger.getCriteriaBuilder();
+	CriteriaQuery<MyData> criteriaQuery = criteriaBuilder.createQuery(MyData.class);
+	Root<MyData> root = criteriaQuery.from(MyData.class);
+	criteriaQuery.select(root);
+	list = (List<MyData>)entityManger.createQuery(criteriaQuery).getResultList();	
+	
+	
+ 7. 서비스와 컴포넌트
+  - 서비스 계층에 대해
+    비즈니스 로직 중에 애플리케이션에서 사용할 수 있게 컴포넌트화한 부분을 '서비스 계층' 이라고 한다. 
+	컨트롤러나 모델을 사용하는 DAO 등과 달리 언제 어디에서든지 호출해서 사용할 수 있는 클래스이다.
+	
+	| 애플리케이션 계층
+	|  → [컨트롤러 (리퀘스트 핸들러) ]
+	| → [모델 (비즈니스 로직, 엔터티)]
+	| 도메인 계층
+	|  → 서비스
+	|  → 리포지터리
+	  
+	스프링 부트 프로그램은 개별 애플리케이션(MVC 와 세트로 구축된 프로그램) 계층과 프로그램 전체를 지탱하고 있는 기반 계층(도메인 계층)으로 나누어 
+	생각할 수 있따. 도메인 계층에 있는 것은 특정 컨트롤러나 모델 등에 존재하지 않는 다. 프로그램 내에 몇 개의 컨트롤러나 모델이 있든지 모두
+	자유롭게 호출할 수 있따. '컨트롤러와 비즈니스 로직(모델) 양쪽에서 자유롭게 호출할 수 있는 것' 이 서비스이다.
+
+	@Service - 클래스를 서비스로 등록하기 위한 애너테이션이다. 서비스 클래스는 클래스명 앞에 애너테이션을 붙여 둔다.
+	@PersistenceContext  EntityManager 의 빈을 자동으로 할당하는 것이었다. 서비스에 EntityManager 를 설정해서 사용한다.
+	
+   - 자바스크립트에서 서비스 사용하기
+    ajax 처리 흐름
+	1. Jquery  불러오기 : 구글의 CDN(Content Delivery Network) 를 이용
+	   <script src="http://code.jquery.com/jquery.min.js"></script>
+	2. 페이지 로드 시에 Ajax 통신 실행
+	$(document).ready(function(){
+		var num = [[{$param.id[0]}]];
+		$.get("/rest/" + num, null, callback);  <- $get 은 Jquery 기능으로 지정한 주소로 Ajax 통신을 시작한다. 실행 후 세 번째 인수에 지정한 callback 함수가 호출되서 필요한 처리 실행
+	});	
+  
+   - 컴포넌트와 Bean
+     컴포넌트는 애플리케이션 내에 자동 생성된 Bean 이다. 생성된 Bean의 인스턴스는 @Autowired 로 바인딩해서 사용할 수 있다.
+	 서비스와 비슷한 느낌이다 라고 생각할 수 있지만 사실 서비스도 컴포넌트의 일종이다.
+	 서비스는 '서비스 계층의 컴포넌트' 라고 보면 된다.
+     
+	 @Component : 클래스에는 @Component 라는 애너테이션 설정으로 이를 통해 클래스가 컴포넌트로 애플리케이션에 인식되게 된다.
+	 컴포넌트 클래스에선 반드시 이 애너테이션을 설정해야 한다.	
+	 
+	 @Autowired : 컴포넌트 클래스의 생성자에는 @Autowired 를 선언해야 애플리케이션 실행 시 오류 발생 하지 않는 다.
+   
+	 @Autowired
+	 public MyBean(ApplicationArguments args) {   <- ApplicationArguments 는 @SpringBootApplication 지정된 클래스로 SpringApplication.run 이 실행될 때 전달된 인수를 관리한다.
+   
+   - 설정클래스는 '설정파일' 의 클래스 버전
+     class 앞에 @Configuration 으로 사용하며 아무런 클래스도 상속하지 않는 매우 일반적인 POJO 클래스 이다.
+     이 설정 클래스에 bean 으로 등록해서 사용하면 된다.
+   
+   - '페이지' 처리 하기
+     1. PageRequest pageRequest = new PageRequest(pageNumber  - 1, PAGE_SIZE); PageRequest 인스턴스 만들기
+	 2. myDataRepository.findAll(pageRequest); 로 엔터티 가져오기
+   
+   
+   - MongoDB 사용
+     NoSQL DB 즉 관계형 DB 가 아니다. MongoDB 는 Collection 과 Document 로 구성되는 데, Collection 은 테이블 Document 는 row 로 생각하면 편하다.
+	 
+	 MongoDB 실행
+	  1. PS C:\Users\ktdsuser> mongod --config  c:\mongoDB/mongod.cfg
+	  2. PS C:\Users\ktdsuser> mongo
+	 
+	 MongoDB 명령어 정리
+	  * show dbs    <- 데이터 베이스 목록 보기
+	  * db          <- 현재 사용중인 db
+	  * use <생성할 db 이름>     <- db 가 없다면 생성, 이미 있다면 접속에
+	    switched to test
+	  * db.createCollection("생성할 콜렉션 이름")     <- 콜렉션 생성하기
+	  * show collections                                  <- 콜렉션 리스트 출력
+	  * db.<콜렉션 이름>.insert(<생성할 데이터>)   # 데이터 생성하기
+	    → db.imlmdb.insert( { name: "iml", level: 99 } )
+	  * db.<콜렉션 이름>.find(<검색할 데이터(조건식)>)   # 데이터 읽기
+        → db.imlmdb.find()
+      * # db.<콜렉션 이름>.update(<갱신할 데이터(조건식)>,<갱신할 데이터 입력>) #데이터 갱신하기
+        → db.imlmdb.update( { name: "iml"}, {$set:{ name: "IML"}})[출처] [MongoDB 입문] 콜렉션 및 데이터 다루기|작성자 IML
+      * db.<콜렉션 이름>.remove(<삭제 할 데이터(조건식)>)   # 데이터 삭제하기
+        → db.imlmdb.remove({name:"kim"})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	 
+        
+	

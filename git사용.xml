@@ -1,0 +1,32 @@
+﻿★ github 사용
+1. local repository 폴더에서 → C:\config-repo> git init
+2. git remote 연동 대상 지정 → C:\config-repo> git remote add origin https://github.com/subprovider/sts-config.git
+3. git 에서 소스 내려받기    → C:\config-repo> git pull origin master
+3. git repository 에 add 대상 지정 → C:\config-repo> git add .
+4. git 상태 조회 → C:\config-repo> git status
+	On branch master
+	Your branch is up to date with 'origin/master'.
+
+	Changes to be committed:
+	  (use "git reset HEAD <file>..." to unstage)
+
+			new file:   account-service.yml
+			new file:   application.properties
+5. git commit 전 config → C:\config-repo> git config --global user.email "subprovider@gmail.com"
+                        → C:\config-repo> git config --global user.name "danielKim"
+6. git commit → C:\config-repo> git commit -m "first commit"  ↔ m 은 설명
+7. git update → C:\config-repo> git push -u origin master
+	Username for 'https://github.com': subprovider
+	Password for 'https://subprovider@github.com':
+	Everything up-to-date
+	Branch 'master' set up to track remote branch 'master' from 'origin'.git push -u origin master
+	Reinitialized existing Git repository in C:/config-repo/.git/
+8. git add 와 commit 을 한번에 → C:\config-repo> git commit -am [설명]
+9. git log 보기 → C:\config-repo> git log
+
+10. git 한글 파일명 사용 문제 고치기 git config --global core.quotepath false
+
+★ maven install
+1. 프로젝트 폴더에서 mvn install 명령
+2. compile 완료되면 target 폴더에서 java -jar {jar 파일명} 으로 실행
+

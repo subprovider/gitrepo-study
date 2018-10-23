@@ -1,0 +1,93 @@
+﻿★ API GATEWAY 란?
+   MSA 에서 언급되는 컴포넌트 중 하나이며, 모든 클라이언트 요청에 대한 end point 를 관리하는 통합 서버이다. 마치 프록시 서버 처럼 동작한다. 그리고 인증 및 권한, 모니터링, loggin 등 추가적인 기능이 있다.
+   모든 비즈니스 로직이 하나의 서버에 존재하는 Monolithic Architecure 와 달리 MSA 는 도메일별 데이터를 저장하고 도메일별로 하나 이상의 서버가 따로 존재한다. 한 서비스에 한개 이상의 서버가 존재하기 때문에 이 서비스를 사용하는 클라이언트 입장에서는 다수의 end point가 생기게 되며 end point 변경이 일어났을 때, 관리하기가 힘들다. 그래서 MAS 환경에서 서비스에 대한 모데인인 하나로 통합할 수 있는 API GATEWAY 가 필요한 것 이다. 
+   
+   API GATEWAY 오픈 소스 종류 
+   1. Netfilx Zuul  - java 프로젝트 이며 세계적인 MSA 오픈 소스
+      클라이언트의 요청은 많은 트래픽과 다양한 요청으로 경고없이 운영에 이슈를 발생시킨다. 
+	  이런 문제ㄴ를 신속하고 동적으로 해결하기 위해서 groovy 언어로 작성된 다양한 형태의 Filter 를 실행한다. Filter 에 기능을 정의하고, 이슈 발생 시 적절한 filter 를 추가함으로써 이를 대응한다.
+	  
+	  1) Netfilx 의 filter 기능
+	     - Authentication and Security
+            클라이언트 요청시, 각 리소스에 대한 인증 요구 사항을 식별하고 이를 만족시키지 않는 요청은 거부
+	     - Insights and Monitoring
+            의미있는 데이터 및 통계 제공
+	     - Dynamic Routing
+            필요에 따라 요청을 다른 클러스터로 동적으로 라우팅
+	     - Stress Testing
+            성능 측정을 위해 점차적으로 클러스터 트래픽을 증가
+	     - Load Shedding
+            각 유형의 요청에 대해 용량을 할당하고, 초과하는 요청은 제한
+	     - Static Response handling
+            클러스터에서 오는 응답을 대신하여 API GATEWAY에서 응답 처리
+			
+	  2) Zuul Filter
+         Zuul Filter는 크게 4가지 Filter로 나누어 진다.
+
+	     - PRE Filter - 라우팅전에 실행되며 필터이다. 주로 logging, 인증등이 pre Filter에서 이루어 진다.
+	     - ROUTING Filter - 요청에 대한 라우팅을 다루는 필터이다. Apache httpclient를 사용하여 정해진 Url로 보낼수 있고, Neflix Ribbon을 사용하여 동적으로 라우팅 할 수도 있다.
+	     - POST Filter - 라우팅 후에 실행되는 필터이다. response에 HTTP header를 추가하거나, response에 대한 응답속도, Status Code, 등 응답에 대한 statistics and metrics을 수집한다.
+	     - ERROR Filter - 에러 발생시 실행되는 필터이다.
+
+	  3) Zuul Components
+         zuul은 zuul-core, zuul-simple-webapp, zuul-netflix, zuul-netflix-webapp 4개의 컨포넌트로 구성한다.
+
+	     - zuul-core : 위에서 설명한 Zuul의 Request Lifecycle를 담당하고, Fliter를 컴파일하고 실행한는 기능을 담당하고 있는 Zuul의 core library
+	     - zuul-netflix : 기본적은 Zuul에 NetflixOSS library를 추가한다.
+	     - zuul-simple-webapp : zuul-core만 사용한 아주 기본적은 web application
+	     - zuul-netflix-webapp : zuul-core와 zuul-netflix를 함께 사용한 web application
+		 
+         API GATEWAY를 구축하기 위해서는 zuul-simple-webapp를 사용하다는 것은 MSA 환경에서 아주 유용한 NetflixOSS library를 포기하는 것이다. zuul-netflix-webapp을 도입하기에는 학습곡선이 크다. 그래서 찾은게 spring cloud netflix 프로젝트이다.		 
+		 
+   2. Spring cloud Netflix
+      spring boot에 NetflixOSS를 통합적으로 제공한다. annotation과 yml설정 만으로도 아주 쉽게 NetflixOSS를 사용할 수 있다.
+
+      1) Spring cloud Zuul
+         spring boot 프로젝트에 artifact id spring-cloud-starter-zuul를 추가하고 main class에 @EnableZuulProxy또는 @EnableZuulServer라고 명시해주면 zuul 서버가 구축된다.		 
+		 
+         @EnableZuulProxy
+         @SpringBootApplication
+         public class ApigatewayApplication {
+         }		 
+
+		<spring cloud zuul png 파일 참조>
+        RouteLocator은 url path에 대한 routing을 지정한다. 요청이 들어오면 url path로 어떻게 routing 할 것인가를 정의하고 있다.
+		
+        ZuulHandlerMapping은 org.springframework.web.servlet.handler.AbstractUrlHandlerMapping을 상속받고, RouteLocator에 정의된 url path에 zuulController를 매핑한다. RouteLocator에 정의된 path의 요청이 들어오면 zuulController를 호출하게 된다.
+		
+        ZuulController은 org.springframework.web.servlet.mvc.ServletWrappingController를 상속받으며, ZuulServlet을 주입시킨다. 그래서 ZuulController로 들어온 모든 요청은 ZuulServlet으로 처리한다.
+		
+        ZuulFilterInitializer는 filter Map에 정의된 filter를 FilterRegistry에 등록하고, FilterLoader로 로딩한다.
+		
+        Spring Cloud Zuul은 @EnableZuulProxy와 @EnableZuulServer 두 종류의 annotation으로 Zuul을 구동시킨다. 두개는 완전히 다른 것이 아니고 @EnableZuulProxy가 @EnableZuulServer을 포함한다. @EnableZuulServer에서 PreDecorationFilter, RibbonRoutingFilter, SimpleHostRoutingFilter를 추가하면, @EnableZuulProxy가 되는 것이다.
+
+        더 자세한 설명은 http://cloud.spring.io/spring-cloud-netflix/spring-cloud-netflix.html에 있고, 더 완벽한 설명은 소스를 보면 된다. 소스가 그렇게 많지 않아 같이보길 권장한다.
+
+        여기까지 Spring Cloud Zuul에 대한 설명였다.		 
+		
+		
+★ spring cloud euleka - Service discovery(Netflix Eureka)
+    ※ 서비스 디스커버리(service discovery)  서비스 클라이언트가 서비스를 호출할 때 서비스의 위치 (즉 IP 주소 및 포트)를 알아낼 수 있는 기능이 필요한 데, 이것을 바로 서비스 디스커버리(service discovery) 라고 한다.
+	   
+	
+   spring cloud 에서 가장 중요한 모듈은 euleka 라고 할 수 있다. euleka 는 MSA 를 구성함에 있어 각 모듈의 lookup, scale 상태, 모듈의 health 상태 등을 관리하는 모듈 이다.
+   <spring cloud euleka.png 참조>
+   
+   client 에서 account 서비스에 요청이 들어오면 euleka 는 account 서비스가 어디에 있는 지 요청이 가능한 상태인지 체크를 해서 해당 서버의 ip 와 port 정보를 돌려주게 되고 클라이언트는 해당 정보를 요청하게 된다.
+   
+   ex)
+     as is → URI uri = URI.create("http://192.168.0.12:8888/ap1/v1/item/option/sale/stauts/hello");
+     to be → URI uri = URI.create("http://app_name/ap1/v1/item/option/sale/stauts/hello");
+
+	 app_name 에 같은 모듈이 서로 다른 포트로 100개가 달려있건, 1개가 달려있건 상관없다.
+	 client side loadbalancing 이라고도 부른다.
+	
+	euleka 는 데시보드를 지원하며, 각 모듈의 상태를 확인 할 수 있다.
+	즉 euleka 는 외부 config server ? 라고 할 수 있다. 각 종 설정 파일을 yml 또는 property 에 따로 저장하는 데, 이 설정 파일들을 외부 git 에 올려놓고
+	 
+★ spring cloud Ribbon - Dynamic Load balancer(Netflix)
+ : 
+ 
+Circuit Breakers : Netflix Hystrix
+cs
+	 
