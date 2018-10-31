@@ -1,6 +1,6 @@
 ﻿★ github 사용
 1. local repository 폴더에서 → C:\config-repo> git init
-2. git remote 연동 대상 지정 → C:\config-repo> git remote add origin https://github.com/subprovider/sts-config.git
+2. git remote 연동 대상 지정 → C:\config-repo> git remote add origin https://github.com/subprovider/gitrepo-study.git
 3. git 에서 소스 내려받기    → C:\config-repo> git pull origin master
 3. git repository 에 add 대상 지정 → C:\config-repo> git add .
 4. git 상태 조회 → C:\config-repo> git status
@@ -30,3 +30,24 @@
 1. 프로젝트 폴더에서 mvn install 명령
 2. compile 완료되면 target 폴더에서 java -jar {jar 파일명} 으로 실행
 
+
+★ ubuntu
+apt-get install software-properties-common
+1. java8 설치
+ - add-apt-repository ppa:webupd8team/java ← apt 저장소 추가
+ - $ sudo apt-get install openjdk-8-jdk ← 우분투에 Java 1.8 설치
+ - $ JAVA_HOME="/usr/lib/jvm/java-8-openjdk-amd64"  ← Java 환경변수 /etc/environment에 설정
+ - $ source /etc/environment ← Java 환경변수 로드
+ - $ java -version ← Java 설치 결과 확인
+ - $ echo $JAVA_HOME
+ 
+ 2. 사용자 생성 및 삭제
+ - $ sudo useradd nexus
+ - $ sudo passwd nexus → nexus 계정에 대한 패스워드 입력
+ - $ sudo userdel nexus
+    
+3. 사용자에 sudo 권한 부여
+ - $ vi /etc/sudoers
+ - nexus   ALL=(ALL)    ALL   ← 이런식으로 추가
+ 
+ 
